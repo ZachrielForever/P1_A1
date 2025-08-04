@@ -1,0 +1,6 @@
+{
+    "name": "Video Diffusor",
+    "hotkey": "5",
+    "tui_layout": "video_diffusor_tui.py",
+    "class_name": "VideoDiffusorPane"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "3D Models",
+    "hotkey": "7",
+    "tui_layout": "3d_tui.py",
+    "class_name": "ThreeDModelPane"
+}

@@ -1,0 +1,6 @@
+{
+    "name": "Interrogator",
+    "hotkey": "3",
+    "tui_layout": "interrogator_tui.py",
+    "class_name": "InterrogatorPane"
+}

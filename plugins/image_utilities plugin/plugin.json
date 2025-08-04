@@ -1,0 +1,6 @@
+{
+    "name": "Image Utils",
+    "hotkey": "4",
+    "tui_layout": "image_utilities_tui.py",
+    "class_name": "ImageUtilitiesPane"
+}

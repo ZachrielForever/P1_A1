@@ -1,0 +1,6 @@
+{
+    "name": "Diffusor",
+    "hotkey": "2",
+    "tui_layout": "diffusor_tui.py",
+    "class_name": "DiffusorPane"
+}
