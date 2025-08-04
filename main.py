@@ -9,15 +9,9 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Header, Footer, Static, Input, RichLog, RadioSet, RadioButton
 
-# We now import the PluginManager class
 from model_manager import PluginManager
 
-# NOTE: The TUI Pane classes from the old main.py are now moved into a
-# "plugins" directory, and are loaded dynamically by the PluginManager.
-# The hardcoded classes below are now for demonstration purposes only.
-# In a real setup, these would be separate files.
-
-# --- TUI Pane Definitions (These would normally be in plugins/*/*.py) ---
+# --- TUI Pane Definitions (for demonstration purposes, these would be in plugins/*/*.py) ---
 class LLMPane(Container):
     """The TUI pane for the LLM."""
     def compose(self):
@@ -52,27 +46,19 @@ class DiffusorPane(Container):
                 yield Input(placeholder="Positive Prompt...", id="positive_prompt_box", classes="prompt-box")
                 yield Input(placeholder="Negative Prompt...", id="negative_prompt_box", classes="prompt-box")
 
-# NOTE: For brevity, the rest of the panes are omitted here.
-# They would be defined in their own plugin files and loaded dynamically.
-
-# --- Main Application Class ---
+# NOTE: The other panes are omitted here.
 
 class AI_Toolkit_App(App):
     """The main application shell for the AI Toolkit."""
 
-    # We no longer hardcode BINDINGS and PANE_MAP. They are generated in __init__
     BINDINGS = []
-    PANE_MAP = {}
-
-    # We now also have a dict to hold the TUI classes for easier access
     PANE_CLASSES = {}
 
     CSS = """
-    # Your CSS from the original file goes here, unchanged.
-    # ...
     Screen { layout: vertical; }
     Header { background: purple; }
     #main_container { layout: vertical; }
+
     .settings-box { border: round green; padding: 0 1; }
     .prompt-box { border: round blue; }
     .output-box { border: round red; }
@@ -81,6 +67,7 @@ class AI_Toolkit_App(App):
     .title-info-box { border: round white; padding: 1; text-align: center; }
     .box_header { content-align: center top; width: 100%; padding-top: 1; }
     .placeholder_text { content-align: center middle; width: 100%; height: 100%; }
+
     .llm_pane { background: #282a36; padding: 1 2; }
     .llm_pane #main_layout { layout: horizontal; }
     .llm_pane #left_column { width: 2fr; padding-right: 1; layout: vertical; }
@@ -89,6 +76,7 @@ class AI_Toolkit_App(App):
     .llm_pane #input_box { height: 3; }
     .llm_pane #settings_box { height: 1fr; margin-bottom: 1; }
     .llm_pane #info_box { height: 1fr; }
+
     .diffusor_pane { layout: vertical; background: #3b4252; padding: 1 2; }
     .diffusor_pane #title_info_box { height: 3; margin-bottom: 1; }
     .diffusor_pane #main_content_area { height: 1fr; layout: horizontal; margin-bottom: 1; }
@@ -102,30 +90,22 @@ class AI_Toolkit_App(App):
 
     def __init__(self):
         super().__init__()
-        # NEW: We now instantiate the PluginManager to discover all plugins
         self.plugin_manager = PluginManager()
-
-        # NEW: We dynamically generate the BINDINGS and PANE_MAP from the discovered plugins.
         self._generate_bindings_and_panes()
 
     def _generate_bindings_and_panes(self):
-        """Generates the app bindings and pane classes dynamically."""
         self.BINDINGS = []
         self.PANE_CLASSES = {}
         for hotkey, plugin_info in self.plugin_manager.plugins.items():
             pane_name = plugin_info["name"].lower().replace(' ', '_')
             description = plugin_info.get("description", pane_name)
 
-            # Add to the BINDINGS list
             self.BINDINGS.append((hotkey, f"load_pane('{hotkey}')", description))
-
-            # Dynamically import and store the TUI class
             tui_class = self.plugin_manager.get_plugin_tui(hotkey)
             if tui_class:
                 self.PANE_CLASSES[hotkey] = tui_class
 
     def compose(self) -> ComposeResult:
-        # The compose method remains the same
         yield Header()
         with Container(id="main_container"):
             pass
@@ -134,40 +114,44 @@ class AI_Toolkit_App(App):
     def on_mount(self) -> None:
         self.title = "AI Toolkit"
         self.sub_title = "v8.3 - Final Fix"
-        # The app now loads the first plugin by default
         first_plugin_key = next(iter(self.plugin_manager.plugins.keys()), None)
         if first_plugin_key:
             self.action_load_pane(first_plugin_key)
 
     def action_load_pane(self, hotkey: str) -> None:
-        """Dynamically loads a TUI pane and its associated model."""
         PaneClass = self.PANE_CLASSES.get(hotkey)
         if not PaneClass:
             self.notify(f"Error: Pane for hotkey '{hotkey}' not found.", severity="error")
             return
 
-        # Unload any model that might be active.
-        self.unload_current_model()
-
-        # Display the new UI pane immediately.
         self._clear_main_container()
         self.query_one("#main_container").mount(PaneClass())
         self.sub_title = self.plugin_manager.plugins.get(hotkey, {}).get("name", "Unknown Pane")
+        self.notify(f"Switched to {self.sub_title} pane.")
 
-        # Now, load the correct model for the new pane in the background.
-        plugin_info = self.plugin_manager.plugins.get(hotkey, {})
-        model_loader = plugin_info.get("model_loader")
-        if model_loader:
-            self.run_worker(self.plugin_manager.load_model, hotkey, thread=True)
-        else:
-            self.notify(f"Switched to {self.sub_title} pane. No model loaded.")
+    # --- Other methods from the original main.py would be placed here ---
+    def unload_current_model(self):
+        """Unloads whatever model is currently in VRAM."""
+        # Your original method logic goes here.
+        pass
 
-    # The rest of the methods (unload_current_model, load_llm, etc.)
-    # would need to be moved to a more centralized "Model Loader" class
-    # or placed within the plugins themselves. For now, they can remain
-    # as is for a single-plugin demo.
-    # The original methods from your main.py file would be copied below here.
-    # --- The rest of your main.py code would go here ---
-    # ...
+    def load_llm(self):
+        """Loads the default LLM into VRAM and updates the UI."""
+        # Your original method logic goes here.
+        pass
 
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        # Your original method logic goes here.
+        pass
 
+    def _clear_main_container(self):
+        container = self.query_one("#main_container")
+        for child in list(container.children):
+            child.remove()
+
+def main():
+    app = AI_Toolkit_App()
+    app.run()
+
+if __name__ == "__main__":
+    main()
