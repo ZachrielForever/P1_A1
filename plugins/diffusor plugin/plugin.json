@@ -2,5 +2,7 @@
     "name": "Diffusor",
     "hotkey": "2",
     "tui_layout": "diffusor_tui.py",
-    "class_name": "DiffusorPane"
+    "class_name": "DiffusorPane",
+    "logic_file": "diffusor_logic.py",
+    "logic_class_name": "DiffusorLogic"
 }
