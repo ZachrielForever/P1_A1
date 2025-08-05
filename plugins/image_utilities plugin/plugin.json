@@ -1,6 +1,8 @@
 {
-    "name": "Image Utils",
+    "name": "Image Utilities",
     "hotkey": "4",
     "tui_layout": "image_utilities_tui.py",
-    "class_name": "ImageUtilitiesPane"
+    "class_name": "ImageUtilitiesPane",
+    "logic_file": "image_utilities_logic.py",
+    "logic_class_name": "ImageUtilitiesLogic"
 }

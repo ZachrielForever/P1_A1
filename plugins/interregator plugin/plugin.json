@@ -1,6 +1,8 @@
 {
-    "name": "Interrogator",
+    "name": "Image Interrogator",
     "hotkey": "3",
-    "tui_layout": "interrogator_tui.py",
-    "class_name": "InterrogatorPane"
+    "tui_layout": "interregator_tui.py",
+    "class_name": "InterrogatorPane",
+    "logic_file": "interregator_logic.py",
+    "logic_class_name": "InterrogatorLogic"
 }
