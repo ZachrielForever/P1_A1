@@ -51,13 +51,10 @@ class AI_Toolkit_App(App):
 
     def __init__(self):
         super().__init__()
-        # NEW: Instantiate the PluginManager
         self.plugin_manager = PluginManager()
-        # NEW: Dynamically generate bindings and panes on startup
         self._generate_bindings_and_panes()
 
     def _generate_bindings_and_panes(self):
-        """Generates the app bindings and pane classes dynamically from plugins."""
         self.BINDINGS = []
         self.PANE_CLASSES = {}
         for hotkey, plugin_info in self.plugin_manager.plugins.items():
@@ -70,23 +67,19 @@ class AI_Toolkit_App(App):
                 self.PANE_CLASSES[hotkey] = tui_class
 
     def compose(self) -> ComposeResult:
-        """Create the app's initial UI components."""
         yield Header()
         with Container(id="main_container"):
             pass
         yield Footer()
 
     def on_mount(self) -> None:
-        """Actions to take when the app is first mounted."""
         self.title = "AI Toolkit"
         self.sub_title = "v8.3 - Final Fix"
-        # Load the first found plugin by default
         first_plugin_key = next(iter(self.plugin_manager.plugins.keys()), None)
         if first_plugin_key:
             self.action_load_pane(first_plugin_key)
 
     def action_load_pane(self, hotkey: str) -> None:
-        """Dynamically loads a TUI pane and its associated model."""
         PaneClass = self.PANE_CLASSES.get(hotkey)
         if not PaneClass:
             self.notify(f"Error: Pane for hotkey '{hotkey}' not found.", severity="error")
@@ -97,15 +90,12 @@ class AI_Toolkit_App(App):
         self.sub_title = self.plugin_manager.plugins.get(hotkey, {}).get("name", "Unknown Pane")
         self.notify(f"Switched to {self.sub_title} pane.")
 
-    # --- Utility methods ---
     def _clear_main_container(self):
-        """Removes all children from the main container."""
         container = self.query_one("#main_container")
         for child in list(container.children):
             child.remove()
 
 def main():
-    """Main function to run the application."""
     app = AI_Toolkit_App()
     app.run()
 
