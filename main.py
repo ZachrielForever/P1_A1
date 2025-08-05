@@ -116,11 +116,12 @@ class AI_Toolkit_App(App):
             self.run_worker(self.active_logic.run_inference, event.value, exclusive=True, thread=True)
             event.input.value = ""
 
-    # NEW: A more general way to handle worker failures.
-    def on_worker_failed(self, event: Worker.Failed) -> None:
+    # This is the most backward-compatible way to handle worker failures.
+    @on(Worker.State.FAILED)
+    def handle_worker_failed(self, event: Worker.State) -> None:
         """Handles worker failures gracefully."""
-        self.notify(f"An operation failed: {event.error}", severity="error")
-        print(f"Worker failed with error: {event.error}")
+        self.notify(f"An operation failed: {event.worker.error}", severity="error")
+        print(f"Worker failed with error: {event.worker.error}")
 
 def main():
     app = AI_Toolkit_App()
