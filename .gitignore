@@ -1,3 +1,27 @@
-*.gguf
+# Python virtual environment
 venv_main/
-.git
+.env
+
+# Large model files
+*.gguf
+*.bin
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+
+# Textual cache and logs
+.textual-cache/
+
+# Image and video files (often large)
+# If you want to keep them but use LFS, remove these lines.
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.webm
+
+# Generated assets
+output_video.mp4
+output_audio.wav
+output_model.glb
