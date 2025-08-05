@@ -9,7 +9,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Header, Footer, Static, Input, RichLog, RadioSet, RadioButton
 from textual import on
-from textual.worker import Worker, get_worker_results, get_worker_errors
+from textual.worker import Worker
 
 from model_manager import PluginManager
 
@@ -86,7 +86,6 @@ class AI_Toolkit_App(App):
             self.notify(f"Error: Pane for hotkey '{hotkey}' not found.", severity="error")
             return
 
-        # NEW: Unload any active model logic before switching panes
         if self.active_logic:
             self.unload_model_in_background(self.active_logic)
             self.active_logic = None
@@ -96,7 +95,6 @@ class AI_Toolkit_App(App):
         self.sub_title = self.plugin_manager.plugins.get(hotkey, {}).get("name", "Unknown Pane")
         self.notify(f"Switched to {self.sub_title} pane.")
 
-        # NEW: Load the new plugin's logic and model in the background
         self.active_logic = self.plugin_manager.get_plugin_logic(hotkey)
         if self.active_logic and hasattr(self.active_logic, 'load_model'):
             self.run_worker(self.active_logic.load_model, exclusive=True, thread=True)
@@ -115,12 +113,18 @@ class AI_Toolkit_App(App):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Handles user input submission for the active plugin."""
         if self.active_logic and hasattr(self.active_logic, 'run_inference'):
-            # Pass the input to the active plugin's inference method
             self.run_worker(self.active_logic.run_inference, event.value, exclusive=True, thread=True)
-            event.input.value = "" # Clear the input box
+            event.input.value = ""
 
-    @on(Worker.State.FAILED)
-    def on_worker_failed(self, event: Worker.State) -> None:
+    # NEW: A more general way to handle worker failures.
+    def on_worker_failed(self, event: Worker.Failed) -> None:
         """Handles worker failures gracefully."""
-        self.notify(f"An operation failed: {event.worker.error}", severity="error")
-        print(f"Worker failed with error: {event.worker.error}")
+        self.notify(f"An operation failed: {event.error}", severity="error")
+        print(f"Worker failed with error: {event.error}")
+
+def main():
+    app = AI_Toolkit_App()
+    app.run()
+
+if __name__ == "__main__":
+    main()

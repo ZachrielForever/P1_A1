@@ -47,16 +47,18 @@ pip install textual
 echo "Installing all plugin dependencies into the main environment..."
 
 # Combine all requirements.txt files into one, removing duplicates
-cat plugins/*/requirements.txt | sort -u > all_requirements.txt
+find plugins/ -type f -name 'requirements.txt' -exec cat {} + | sort -u > all_requirements.txt
 
-# Special case for llama-cpp-python to ensure GPU compilation
+# --- NEW: Check for CUDA and install llama-cpp-python accordingly ---
 if grep -q "llama-cpp-python" "all_requirements.txt"; then
-    echo "Found llama-cpp-python, installing with GPU support..."
-
-    # --- THIS IS THE FIX ---
-    # We now also set CMAKE_INSTALL_RPATH to bake the library path
-    # directly into the compiled file. This is the most robust solution.
-    CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_INSTALL_RPATH=/usr/local/cuda/lib64" FORCE_CMAKE=1 pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
+    if command -v nvcc &> /dev/null; then
+        echo "Found llama-cpp-python and CUDA compiler (nvcc). Installing with GPU support..."
+        CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_INSTALL_RPATH=/usr/local/cuda/lib64" FORCE_CMAKE=1 pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
+    else
+        echo "Found llama-cpp-python but no CUDA compiler (nvcc). Installing with CPU support only."
+        # This will remove the CMAKE_ARGS and build with only the CPU backend
+        pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
+    fi
 fi
 
 # Install all other dependencies from our combined list
@@ -71,5 +73,5 @@ deactivate
 echo -e "\n${GREEN}Setup complete!${NC}"
 echo -e "To run the application, first activate the main environment with:"
 echo -e "${YELLOW}source $VENV_DIR/bin/activate${NC}"
-echo -e "Then run the main script with:"
-echo -e "${YELLOW}python main.py${NC}"
+echo -e "Then run the application with:"
+echo -e "${YELLOW}python3 main.py${NC}"
