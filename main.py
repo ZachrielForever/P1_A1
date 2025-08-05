@@ -117,11 +117,12 @@ class AI_Toolkit_App(App):
             event.input.value = ""
 
     # This is the most backward-compatible way to handle worker failures.
-    @on(Worker.State.FAILED)
-    def handle_worker_failed(self, event: Worker.State) -> None:
+    # It checks for a generic Worker.StateChanged event.
+    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         """Handles worker failures gracefully."""
-        self.notify(f"An operation failed: {event.worker.error}", severity="error")
-        print(f"Worker failed with error: {event.worker.error}")
+        if event.worker.state == "FAILED":
+            self.notify(f"An operation failed: {event.worker.error}", severity="error")
+            print(f"Worker failed with error: {event.worker.error}")
 
 def main():
     app = AI_Toolkit_App()
