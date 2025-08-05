@@ -2,5 +2,7 @@
     "name": "Video Diffusor",
     "hotkey": "5",
     "tui_layout": "video_diffusor_tui.py",
-    "class_name": "VideoDiffusorPane"
+    "class_name": "VideoDiffusorPane",
+    "logic_file": "video_diffusor_logic.py",
+    "logic_class_name": "VideoDiffusorLogic"
 }

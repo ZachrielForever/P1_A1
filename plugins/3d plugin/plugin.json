@@ -1,6 +1,8 @@
 {
-    "name": "3D Models",
+    "name": "3D Model",
     "hotkey": "7",
     "tui_layout": "3d_tui.py",
-    "class_name": "ThreeDModelPane"
+    "class_name": "ThreeDModelPane",
+    "logic_file": "3d_model_logic.py",
+    "logic_class_name": "ThreeDModelLogic"
 }
