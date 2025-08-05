@@ -2,5 +2,7 @@
     "name": "LLM Chat",
     "hotkey": "1",
     "tui_layout": "llm_tui.py",
-    "class_name": "LLMPane"
+    "class_name": "LLMPane",
+    "logic_file": "llm_logic.py",
+    "logic_class_name": "LLMLogic"
 }
