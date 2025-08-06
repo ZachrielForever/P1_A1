@@ -1,6 +1,7 @@
 # Python virtual environment
 venv_main/
 .env
+dependencies/
 
 # Large model files
 *.gguf
