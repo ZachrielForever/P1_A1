@@ -3,6 +3,6 @@
     "hotkey": "3",
     "tui_layout": "interregator_tui.py",
     "class_name": "InterrogatorPane",
-    "logic_file": "interregator_logic.py",
-    "logic_class_name": "InterrogatorLogic"
+    "model_type": "Image_Interrogator",
+    "plugin_path": "plugins/Image_Interrogator"
 }

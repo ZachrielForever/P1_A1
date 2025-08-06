@@ -3,6 +3,6 @@
     "hotkey": "6",
     "tui_layout": "sound_tui.py",
     "class_name": "SoundAIPane",
-    "logic_file": "sound_logic.py",
-    "logic_class_name": "SoundLogic"
+    "model_type": "Sound_AI",
+    "plugin_path": "plugins/Sound"
 }

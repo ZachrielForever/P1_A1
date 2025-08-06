@@ -3,6 +3,6 @@
     "hotkey": "5",
     "tui_layout": "video_diffusor_tui.py",
     "class_name": "VideoDiffusorPane",
-    "logic_file": "video_diffusor_logic.py",
-    "logic_class_name": "VideoDiffusorLogic"
+    "model_type": "Video_Diffusor",
+    "plugin_path": "plugins/Video"
 }

@@ -4,7 +4,7 @@
 from textual.containers import Container, Vertical, Horizontal
 from textual.widgets import Static, Input, RichLog
 
-class DiffusorPane(Container):
+class ImageDiffusorPane(Container):
     """The TUI pane for generating images with a diffusion model."""
 
     def compose(self):

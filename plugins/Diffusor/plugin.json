@@ -1,0 +1,8 @@
+{
+    "name": "Diffusor",
+    "hotkey": "2",
+    "tui_layout": "image_diffusor_tui.py",
+    "class_name": "ImageDiffusorPane",
+    "model_type": "Diffusor",
+    "plugin_path": "plugins/Diffusor"
+}

@@ -35,4 +35,4 @@ We plan to include a diverse set of AI models to create a robust workflow:
 *(Usage will be documented here once the program is ready for end-users.)*
 
 ## License
-This project is intended to be **Free and Open Source Software (FOSS)**. The code will be released under an applicable license to ensure it remains free for all end-users.
+GNU GPLv3

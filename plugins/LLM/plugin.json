@@ -1,0 +1,8 @@
+{
+    "name": "LLM Chat",
+    "hotkey": "1",
+    "tui_layout": "llm_tui.py",
+    "class_name": "LLMChatPane",
+    "model_type": "LLM",
+    "plugin_path": "plugins/LLM"
+}

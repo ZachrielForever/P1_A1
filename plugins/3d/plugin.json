@@ -3,6 +3,6 @@
     "hotkey": "7",
     "tui_layout": "3d_tui.py",
     "class_name": "ThreeDModelPane",
-    "logic_file": "3d_model_logic.py",
-    "logic_class_name": "ThreeDModelLogic"
+    "model_type": "3D_Model",
+    "plugin_path": "plugins/3d"
 }

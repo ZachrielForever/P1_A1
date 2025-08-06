@@ -4,7 +4,7 @@
 from textual.containers import Container, Vertical, Horizontal
 from textual.widgets import Static, Input, RichLog
 
-class LLMPane(Container):
+class LLMChatPane(Container):
     """The TUI pane for interacting with a Large Language Model."""
 
     def compose(self):
@@ -23,4 +23,3 @@ class LLMPane(Container):
             with Container(id="settings_column", classes="settings-box"):
                 yield Static("[b]Relevant Settings[/b]", classes="box_header")
                 yield Static("Model: Gemma-3-8B\nTemp: 0.7\nTop-k: 40", id="settings_content")
-
