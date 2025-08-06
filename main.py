@@ -13,6 +13,7 @@ from textual import on
 from textual.worker import Worker, WorkerState
 
 from model_manager import PluginManager
+from plugins.Diffusor.image_diffusor_logic import ImageDiffusorLogic
 
 def _ensure_dependencies(plugin_manager):
     """
@@ -128,10 +129,13 @@ class AI_Toolkit_App(App):
             self.active_logic = None
 
         # Load the new pane and logic
-        self.query_one("#main_container").mount(PaneClass())
         self.active_plugin_info = self.plugin_manager.plugins[hotkey]
-        self.active_pane_id = self.active_plugin_info['name'].lower().replace(' ', '_').replace('-', '_') + "_pane"
         self.active_logic = self.plugin_manager.get_plugin_logic(hotkey)
+        self.active_pane_id = self.active_plugin_info['name'].lower().replace(' ', '_').replace('-', '_') + "_pane"
+
+        # Pass the logic instance to the pane during initialization
+        self.query_one("#main_container").mount(PaneClass(logic=self.active_logic))
+
         self.title = f"AI Toolkit - {self.active_plugin_info['name']}"
 
         # Initialize the model in the background

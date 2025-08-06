@@ -2,7 +2,7 @@
     "name": "Sound AI",
     "hotkey": "6",
     "tui_layout": "sound_tui.py",
-    "class_name": "SoundAIPane",
+    "class_name": "SoundPane",
     "model_type": "Sound_AI",
     "plugin_path": "plugins/Sound"
 }
