@@ -3,67 +3,48 @@
 import os
 import torch
 from diffusers import DiffusionPipeline
-from typing import List
+import imageio
 
-class VideoDiffusorLogic:
-    """
-    Handles the core logic for the Video Diffusor plugin, including model loading,
-    video generation, and state management.
-    """
-    def __init__(self, main_app=None):
-        self.main_app = main_app
+class VideoDiffusorPlugin:
+    def __init__(self, plugin_path):
         self.pipe = None
-        self.model_path = os.getenv("VIDEO_DIFFUSOR_MODEL_PATH", "damo-vilab/text-to-video-ms-1.7")
+        self.model_id = "damo-vilab/text-to-video-ms-1-7b"
+        self.model_path = os.path.join(plugin_path, "models", "video_model")
 
     def load_model(self):
-        """Loads the video diffusion model into memory."""
-        if self.pipe:
-            print("Model already loaded. Unloading first...")
-            self.unload_model()
-
-        try:
-            print(f"Loading video model from {self.model_path}...")
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-
-            self.pipe = DiffusionPipeline.from_pretrained(self.model_path, torch_dtype=torch.float16, variant="fp16")
-            self.pipe = self.pipe.to(device)
-            print("Video diffusion model loaded successfully!")
-            return True
-        except Exception as e:
-            print(f"Failed to load video model: {e}")
-            self.pipe = None
-            return False
+        if self.pipe is None:
+            self.pipe = DiffusionPipeline.from_pretrained(self.model_id, torch_dtype=torch.float16)
+            self.pipe.to("cuda")
 
     def unload_model(self):
-        """Unloads the video diffusion model from memory."""
-        if self.pipe:
-            print("Unloading video diffusion model...")
-            del self.pipe
-            self.pipe = None
-            import gc
-            gc.collect()
+        if self.pipe is not None:
+            self.pipe = self.pipe.to("cpu")
             torch.cuda.empty_cache()
-            print("Model unloaded.")
 
-    def run_inference(self, prompt: str, negative_prompt: str = ""):
+    def run_inference(self, user_prompt: str, settings: dict) -> str:
         """
-        Runs video generation on the loaded model.
-        Returns the path to the generated video file.
+        Runs video generation inference with user-defined settings.
+
+        Args:
+            user_prompt (str): The text prompt for video generation.
+            settings (dict): A dictionary of user-defined settings.
         """
-        if not self.pipe:
-            print("Error: No model loaded.")
-            return None
+        if self.pipe is None:
+            raise ValueError("Model is not loaded. Call load_model() first.")
 
-        print(f"Running video generation with prompt: '{prompt}'")
-        try:
-            video_frames: List[Image.Image] = self.pipe(prompt, negative_prompt=negative_prompt).frames
+        # Get settings with default values
+        num_frames = settings.get("num_frames", 16)
+        num_inference_steps = settings.get("num_inference_steps", 25)
+        guidance_scale = settings.get("guidance_scale", 9.0)
 
-            # Save the frames as a video file (e.g., using imageio)
-            output_path = "output_video.mp4"
-            import imageio
-            imageio.mimsave(output_path, video_frames, fps=8)  # fps can be adjusted
+        # Run inference with the provided settings
+        video_frames = self.pipe(
+            prompt=user_prompt,
+            num_frames=num_frames,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale
+        ).frames
 
-            return output_path
-        except Exception as e:
-            print(f"An error occurred during inference: {e}")
-            return None
+        output_path = "generated_video.mp4"
+        imageio.mimwrite(output_path, video_frames, fps=8)
+        return output_path

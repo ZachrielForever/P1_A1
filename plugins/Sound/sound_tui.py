@@ -9,17 +9,12 @@ class SoundAIPane(Container):
 
     def compose(self):
         """Create the layout for the Sound AI pane."""
-
         self.add_class("sound_ai_pane")
-
-        # A simple vertical layout is more robust.
         with Vertical(id="main_layout"):
-
             with Container(id="input_area", classes="prompt-box"):
                  yield Input(placeholder="Enter a sound description...")
-
             with Container(id="settings_area", classes="settings-box"):
                 yield Static("[b]Settings[/b]", classes="box_header")
-
+                yield Static("", id="settings_content")
             with Container(id="status_area", classes="output-box"):
                 yield RichLog(id="status_log")

@@ -9,11 +9,8 @@ class ImageUtilitiesPane(Container):
 
     def compose(self):
         """Create the layout for the Image Utilities pane."""
-
         self.add_class("image_utilities_pane")
-
         with Horizontal(id="horizontal_layout"):
-
             with Container(id="input_image_box", classes="input-box"):
                 yield Static("Load an image to process...", classes="placeholder_text")
 
@@ -24,10 +21,10 @@ class ImageUtilitiesPane(Container):
                     yield RadioButton("Face Restore")
 
                 yield Static("\n[b]Parameters[/b]", classes="box_header")
-                yield Static("Model: Real-ESRGAN\nScale: 4x", id="settings_content")
+                yield Static("", id="settings_content")
 
                 yield Static("\n[b]Navigation[/b]", classes="box_header")
-                yield Static("1: Return to LLM", id="navigation_content")
+                yield Static("", id="navigation_content")
 
             with Container(id="output_image_box", classes="output-box"):
                 yield Static("Result will appear here...", classes="placeholder_text")

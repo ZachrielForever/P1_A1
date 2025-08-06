@@ -70,108 +70,27 @@ def _ensure_dependencies(plugin_manager):
             print(f"No requirements.txt found for '{model_type}'.")
 
 
-class ModelSelectionOverlay(Vertical):
-    """A translucent overlay for selecting a model."""
-
-    def __init__(self, models: list[str], pane_hotkey: str):
-        super().__init__(id="model_selection_overlay")
-        self.models = models
-        self.pane_hotkey = pane_hotkey
-        self.selected_model = None
-
-    def compose(self) -> ComposeResult:
-        yield Static("[b]Select a Model[/b]", classes="box_header")
-        with RadioSet():
-            for model_name in self.models:
-                yield RadioButton(model_name)
-        with Horizontal(id="overlay_buttons"):
-            yield Button("Load", variant="primary", id="load_button")
-            yield Button("Cancel", variant="default", id="cancel_button")
-
-    @on(RadioSet.Changed)
-    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        self.selected_model = event.pressed.label.plain
-
-    @on(Button.Pressed, "#load_button")
-    def on_load_button_pressed(self) -> None:
-        if self.selected_model:
-            self.app.action_confirm_load(self.pane_hotkey, self.selected_model)
-        else:
-            self.app.notify("Please select a model first.", severity="warning")
-
-    @on(Button.Pressed, "#cancel_button")
-    def on_cancel_button_pressed(self) -> None:
-        self.remove()
-
 class AI_Toolkit_App(App):
-    """The main application shell for the AI Toolkit."""
-
+    CSS_PATH = "style.css"
     BINDINGS = [
         ("q", "quit", "Quit"),
     ]
 
     PANE_CLASSES = {}
 
-    CSS = """
-    Screen { layout: vertical; }
-    Header { background: purple; }
-    #main_container { layout: vertical; }
-
-    .settings-box { border: round green; padding: 0 1; }
-    .prompt-box { border: round blue; }
-    .output-box { border: round red; }
-    .input-box { border: round cyan; }
-    .info-box { border: round yellow; padding: 0 1; }
-    .title-info-box { border: round white; padding: 1; text-align: center; }
-    .box_header { content-align: center top; width: 100%; padding-top: 1; }
-    .placeholder_text { content-align: center middle; width: 100%; height: 100%; }
-
-    .llm_pane { padding: 1 2; }
-    .llm_pane #main_layout { layout: horizontal; }
-    .llm_pane #left_column { width: 2fr; padding-right: 1; layout: vertical; }
-    .llm_pane #right_column { width: 1fr; layout: vertical; }
-    .llm_pane #response_box { height: 1fr; margin-bottom: 1; }
-    .llm_pane #input_box { height: 3; }
-    .llm_pane #settings_box { height: 1fr; margin-bottom: 1; }
-    .llm_pane #info_box { height: 1fr; }
-
-    .diffusor_pane { layout: vertical; padding: 1 2; }
-    .diffusor_pane #title_info_box { height: 3; margin-bottom: 1; }
-    .diffusor_pane #main_content_area { height: 1fr; layout: horizontal; margin-bottom: 1; }
-    .diffusor_pane #prompt_area { height: 3; layout: horizontal; }
-    .diffusor_pane #component_settings_box { width: 1fr; margin-right: 1; }
-    .diffusor_pane #image_display_box { width: 2fr; }
-    .diffusor_pane #numerical_settings_box { width: 1fr; margin-left: 1; }
-    .diffusor_pane #positive_prompt_box { width: 1fr; margin-right: 1; }
-    .diffusor_pane #negative_prompt_box { width: 1fr; }
-
-    #model_selection_overlay {
-        width: 60%;
-        height: 60%;
-        background: $surface;
-        border: thick $primary;
-        align: center middle;
-        text-align: center;
-        margin: 0;
-        padding: 2;
-    }
-    #model_selection_overlay Static { margin-bottom: 1; }
-    #overlay_buttons { margin-top: 2; width: 100%; align-horizontal: center; }
-    #overlay_buttons Button { margin-right: 2; }
-    """
-
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.plugin_manager = PluginManager()
+        self.active_plugin_info = None
         self.active_logic = None
-        self.active_hotkey = None
-        self.PANE_CLASSES = {}
+        self.active_pane_id = "llm_pane"
 
     def compose(self) -> ComposeResult:
-        yield Header()
-        with Container(id="main_container"):
-            pass
-        yield Footer()
+        with Container(id="app_container"):
+            yield Header()
+            with Container(id="main_container"):
+                yield RichLog() # Temporary placeholder for the log.
+            yield Footer()
 
     def on_mount(self) -> None:
         self.title = "AI Toolkit"
@@ -183,6 +102,10 @@ class AI_Toolkit_App(App):
             self.action_load_pane(first_plugin_key)
 
     def _generate_bindings_and_panes(self):
+        # Clear existing bindings and panes to prevent duplicates
+        self.BINDINGS = [("q", "quit", "Quit")]
+        self.PANE_CLASSES = {}
+
         for hotkey, plugin_info in self.plugin_manager.plugins.items():
             pane_name = plugin_info["name"].lower().replace(' ', '_')
             description = plugin_info.get("description", pane_name)
@@ -190,45 +113,102 @@ class AI_Toolkit_App(App):
             self.bind(hotkey, f"load_pane('{hotkey}')", description=description)
 
     def action_load_pane(self, hotkey: str) -> None:
-        if hotkey == self.active_hotkey:
+        if self.active_plugin_info and self.active_plugin_info['hotkey'] == hotkey:
             return
 
-        self._clear_main_container()
-
-        plugin_info = self.plugin_manager.plugins.get(hotkey)
-        if plugin_info:
-            model_type = plugin_info.get("model_type")
-            models = self._get_available_models(model_type)
-
-            if not models:
-                self.notify(f"No models found for {model_type} in 'models/{model_type}'", severity="warning")
-                self._load_and_mount_pane(hotkey)
-            else:
-                self.query_one("Screen").mount(ModelSelectionOverlay(models, hotkey))
-
-    def action_confirm_load(self, hotkey: str, model_name: str) -> None:
-        self.query_one(ModelSelectionOverlay).remove()
-
-        if self.active_logic:
-            self.unload_model_in_background(self.active_logic)
-
-        self.active_hotkey = hotkey
-        self.sub_title = self.plugin_manager.plugins.get(hotkey, {}).get("name", "Unknown Pane")
-        self.notify(f"Switched to {self.sub_title} pane. Loading '{model_name}'...")
-
-        self._load_and_mount_pane(hotkey)
-        self.active_logic = self.plugin_manager.get_plugin_logic(hotkey)
-
-        if self.active_logic and hasattr(self.active_logic, 'load_model'):
-            self.run_worker(self.active_logic.load_model, model_name, exclusive=True, thread=True)
-
-    def _load_and_mount_pane(self, hotkey: str) -> None:
         PaneClass = self.PANE_CLASSES.get(hotkey)
         if not PaneClass:
             self.notify(f"Error: Pane for hotkey '{hotkey}' not found.", severity="error")
             return
 
+        # Clean up the previous pane and logic
+        self._clear_main_container()
+        if self.active_logic:
+            self.unload_model_in_background(self.active_logic)
+            self.active_logic = None
+
+        # Load the new pane and logic
         self.query_one("#main_container").mount(PaneClass())
+        self.active_plugin_info = self.plugin_manager.plugins[hotkey]
+        self.active_pane_id = self.active_plugin_info['name'].lower().replace(' ', '_').replace('-', '_') + "_pane"
+        self.active_logic = self.plugin_manager.get_plugin_logic(hotkey)
+        self.title = f"AI Toolkit - {self.active_plugin_info['name']}"
+
+        # Initialize the model in the background
+        if self.active_logic and hasattr(self.active_logic, 'load_model'):
+            self.run_worker(self.active_logic.load_model, exclusive=True, thread=True)
+
+    def _get_current_settings(self) -> dict:
+        """
+        Retrieves the current settings from the widgets in the active pane.
+        Returns a dictionary of settings or an empty dictionary if no settings are found.
+        """
+        settings = {}
+        active_pane = self.query_one(f"#{self.active_pane_id}")
+
+        # Check for LLM settings
+        if active_pane.query_one("#temperature_input", False):
+            try:
+                settings["temperature"] = float(active_pane.query_one("#temperature_input").value)
+                settings["top_k"] = int(active_pane.query_one("#top_k_input").value)
+                settings["top_p"] = float(active_pane.query_one("#top_p_input").value)
+                settings["max_output_tokens"] = int(active_pane.query_one("#max_output_tokens_input").value)
+            except Exception as e:
+                self.notify(f"Invalid LLM settings: {e}", severity="error")
+
+        # Check for Image Diffusor settings
+        if active_pane.query_one("#num_inference_steps_input", False):
+            try:
+                settings["num_inference_steps"] = int(active_pane.query_one("#num_inference_steps_input").value)
+                settings["guidance_scale"] = float(active_pane.query_one("#guidance_scale_input").value)
+                settings["seed"] = int(active_pane.query_one("#seed_input").value)
+            except Exception as e:
+                self.notify(f"Invalid Image Diffusor settings: {e}", severity="error")
+
+        # Check for Interrogator settings
+        if active_pane.query_one("#max_new_tokens_input", False):
+            try:
+                settings["max_new_tokens"] = int(active_pane.query_one("#max_new_tokens_input").value)
+                settings["beam_size"] = int(active_pane.query_one("#beam_size_input").value)
+            except Exception as e:
+                self.notify(f"Invalid Interrogator settings: {e}", severity="error")
+
+        # Check for Image Utilities settings
+        if active_pane.query_one("#upscale_type_radio", False):
+            try:
+                # Assuming `upscale_type_radio` is the ID of the RadioSet
+                upscale_type = active_pane.query_one("#upscale_type_radio").pressed_button.label.plain.lower().replace(" ", "_")
+                settings["upscale_type"] = upscale_type
+                settings["scale_factor"] = int(active_pane.query_one("#scale_factor_input").value)
+            except Exception as e:
+                self.notify(f"Invalid Image Utilities settings: {e}", severity="error")
+
+        # Check for Sound AI settings
+        if active_pane.query_one("#duration_input", False):
+            try:
+                settings["duration"] = int(active_pane.query_one("#duration_input").value)
+                settings["sampling_rate"] = int(active_pane.query_one("#sampling_rate_input").value)
+            except Exception as e:
+                self.notify(f"Invalid Sound AI settings: {e}", severity="error")
+
+        # Check for 3D Model settings
+        if active_pane.query_one("#3d_num_inference_steps_input", False):
+            try:
+                settings["num_inference_steps"] = int(active_pane.query_one("#3d_num_inference_steps_input").value)
+                settings["guidance_scale"] = float(active_pane.query_one("#3d_guidance_scale_input").value)
+            except Exception as e:
+                self.notify(f"Invalid 3D Model settings: {e}", severity="error")
+
+        # Check for Video Diffusor settings
+        if active_pane.query_one("#video_num_frames_input", False):
+            try:
+                settings["num_frames"] = int(active_pane.query_one("#video_num_frames_input").value)
+                settings["num_inference_steps"] = int(active_pane.query_one("#video_num_inference_steps_input").value)
+                settings["guidance_scale"] = float(active_pane.query_one("#video_guidance_scale_input").value)
+            except Exception as e:
+                self.notify(f"Invalid Video Diffusor settings: {e}", severity="error")
+
+        return settings
 
     def _get_available_models(self, model_type: str) -> list[str]:
         if not model_type:
@@ -249,17 +229,26 @@ class AI_Toolkit_App(App):
         for child in list(container.children):
             child.remove()
 
-    @on(Input.Submitted, "#input_box")
+    @on(Input.Submitted, "Input#input_box")
     def on_input_submitted(self, event: Input.Submitted) -> None:
-        if self.active_logic and hasattr(self.active_logic, 'run_inference'):
-            self.run_worker(self.active_logic.run_inference, event.value, exclusive=True, thread=True)
-            event.input.value = ""
+        if not self.active_logic or not hasattr(self.active_logic, 'run_inference'):
+            self.notify("Error: No active plugin logic or run_inference method found.", severity="error")
+            return
 
-def main():
-    plugin_manager = PluginManager()
-    _ensure_dependencies(plugin_manager)
-    app = AI_Toolkit_App()
-    app.run()
+        user_prompt = event.value
+        current_settings = self._get_current_settings()
+
+        # Now pass both the prompt and the settings to the model.
+        self.run_worker(self.active_logic.run_inference, user_prompt, current_settings, exclusive=True, thread=True)
+        event.input.value = ""
+
+    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        if event.state == WorkerState.SUCCESS:
+            print(f"Worker succeeded with result: {event.worker.result}")
+        elif event.state == WorkerState.ERROR:
+            print(f"Worker failed with error: {event.worker.error}")
 
 if __name__ == "__main__":
-    main()
+    _ensure_dependencies(PluginManager())
+    app = AI_Toolkit_App()
+    app.run()

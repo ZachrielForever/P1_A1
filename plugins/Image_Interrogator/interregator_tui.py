@@ -9,14 +9,10 @@ class InterrogatorPane(Container):
 
     def compose(self):
         """Create the layout for the Interrogator pane."""
-
         self.add_class("interrogator_pane")
-
-        # This Horizontal container is the single child, making the layout simpler.
         with Horizontal(id="main_layout"):
-
             with Container(id="input_box", classes="input-box"):
-                yield Static("Load Image...", classes="placeholder_text")
+                yield Static("", classes="placeholder_text")
 
             with Container(id="output_box", classes="output-box"):
                 yield RichLog(id="text_output", wrap=True)

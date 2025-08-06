@@ -3,70 +3,49 @@
 import os
 import torch
 from diffusers import StableDiffusionPipeline
+from PIL import Image
 
-class DiffusorLogic:
-    """
-    Handles the core logic for the Diffusor plugin, including model loading,
-    image generation, and state management.
-    """
-    def __init__(self, main_app=None):
-        """Initializes the logic class with a reference to the main app."""
-        self.main_app = main_app
+class ImageDiffusorPlugin:
+    def __init__(self, plugin_path):
         self.pipe = None
-        # Use a default model path for the pipeline
-        self.model_path = os.getenv("DIFFUSOR_MODEL_PATH", "runwayml/stable-diffusion-v1-5")
+        self.model_id = "runwayml/stable-diffusion-v1-5"
+        self.model_path = os.path.join(plugin_path, "models")
+        self.pipe = StableDiffusionPipeline.from_pretrained(
+            self.model_id, torch_dtype=torch.float16
+        )
 
     def load_model(self):
-        """Loads the diffusion model into memory."""
-        if self.pipe:
-            print("Model already loaded. Unloading first...")
-            self.unload_model()
-
-        try:
-            print(f"Loading model from {self.model_path}...")
-            # Use GPU if available
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-
-            # The pipeline automatically downloads and caches the model
-            self.pipe = StableDiffusionPipeline.from_pretrained(
-                self.model_path,
-                torch_dtype=torch.float16 if device == "cuda" else torch.float32
-            )
-            self.pipe = self.pipe.to(device)
-            print("Diffusion model loaded successfully!")
-            return True
-        except Exception as e:
-            print(f"Failed to load model: {e}")
-            self.pipe = None
-            return False
+        # Model is loaded in __init__
+        self.pipe.to("cuda")
 
     def unload_model(self):
-        """Unloads the diffusion model from memory."""
-        if self.pipe:
-            print("Unloading diffusion model...")
-            del self.pipe
-            self.pipe = None
-            # Explicitly call gc.collect() to help with memory cleanup
-            import gc
-            gc.collect()
-            torch.cuda.empty_cache()
-            print("Model unloaded.")
+        self.pipe = self.pipe.to("cpu")
+        torch.cuda.empty_cache()
 
-    def run_inference(self, prompt: str, negative_prompt: str = ""):
+    def run_inference(self, user_prompt: str, settings: dict) -> Image.Image:
         """
-        Runs image generation on the loaded model.
-        Returns the generated image object.
-        """
-        if not self.pipe:
-            print("Error: No model loaded.")
-            return None
+        Runs inference on the image diffusion model with user-defined settings.
 
-        print(f"Running image generation with prompt: '{prompt}'")
-        try:
-            # You can add more parameters here like num_inference_steps, guidance_scale, etc.
-            image = self.pipe(prompt=prompt, negative_prompt=negative_prompt).images[0]
-            # This returns a PIL Image object
-            return image
-        except Exception as e:
-            print(f"An error occurred during inference: {e}")
-            return None
+        Args:
+            user_prompt (str): The text prompt to generate an image from.
+            settings (dict): A dictionary of user-defined settings.
+        """
+        if self.pipe is None:
+            raise ValueError("Model is not loaded. Call load_model() first.")
+
+        # Get settings with default values
+        num_inference_steps = settings.get("num_inference_steps", 50)
+        guidance_scale = settings.get("guidance_scale", 7.5)
+        seed = settings.get("seed", None)
+
+        generator = torch.Generator("cuda").manual_seed(seed) if seed is not None else None
+
+        # Run inference with the provided settings
+        image = self.pipe(
+            prompt=user_prompt,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale,
+            generator=generator
+        ).images[0]
+
+        return image

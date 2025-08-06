@@ -2,66 +2,51 @@
 
 import os
 import torch
-from transformers import pipeline
+from diffusers import StableDiffusionPipeline
+from PIL import Image
 
-class ThreeDModelLogic:
-    """
-    Handles the core logic for the 3D Model plugin, including model loading,
-    3D model generation, and state management.
-    """
-    def __init__(self, main_app=None):
-        self.main_app = main_app
-        self.model = None
-        self.model_path = os.getenv("THREED_MODEL_PATH", "openai/shap-e")
+class ThreeDModelPlugin:
+    def __init__(self, plugin_path):
+        self.pipe = None
+        self.model_id = "stabilityai/stable-diffusion-2-1" # Or a 3D-specific model
+        self.model_path = os.path.join(plugin_path, "models", "3d_model")
 
     def load_model(self):
-        """Loads the 3D generation model into memory."""
-        if self.model:
-            print("Model already loaded. Unloading first...")
-            self.unload_model()
-
-        try:
-            print(f"Loading 3D model from {self.model_path}...")
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-
-            # Using the transformers pipeline for a simplified example
-            self.model = pipeline("text-to-image", model=self.model_path, device=device)
-            print("3D generation model loaded successfully!")
-            return True
-        except Exception as e:
-            print(f"Failed to load 3D model: {e}")
-            self.model = None
-            return False
+        if self.pipe is None:
+            self.pipe = StableDiffusionPipeline.from_pretrained(
+                self.model_id, torch_dtype=torch.float16
+            )
+            self.pipe.to("cuda")
 
     def unload_model(self):
-        """Unloads the 3D generation model from memory."""
-        if self.model:
-            print("Unloading 3D generation model...")
-            del self.model
-            self.model = None
-            import gc
-            gc.collect()
+        if self.pipe is not None:
+            self.pipe = self.pipe.to("cpu")
             torch.cuda.empty_cache()
-            print("Model unloaded.")
 
-    def run_inference(self, prompt: str):
+    def run_inference(self, user_prompt: str, settings: dict) -> str:
         """
-        Runs 3D model generation on the loaded model.
-        Returns the path to the generated 3D model file.
+        Runs 3D model generation inference with user-defined settings.
+
+        Args:
+            user_prompt (str): The text prompt for 3D model generation.
+            settings (dict): A dictionary of user-defined settings.
         """
-        if not self.model:
-            print("Error: No model loaded.")
-            return None
+        if self.pipe is None:
+            raise ValueError("Model is not loaded. Call load_model() first.")
 
-        print(f"Running 3D model generation with prompt: '{prompt}'")
-        try:
-            # This is a placeholder for actual 3D generation logic
-            output_model = self.model(prompt)
-            output_path = "output_model.glb"
-            # Logic to save the generated model would go here
-            # output_model.save(output_path)
+        # Get settings with default values
+        num_inference_steps = settings.get("num_inference_steps", 50)
+        guidance_scale = settings.get("guidance_scale", 7.5)
 
-            return output_path
-        except Exception as e:
-            print(f"An error occurred during inference: {e}")
-            return None
+        # This is a placeholder for actual 3D generation logic
+        # The prompt is used to generate a 2D image as a proxy
+        image = self.pipe(
+            prompt=user_prompt,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=guidance_scale
+        ).images[0]
+
+        # Save the generated image as a placeholder for a 3D model file
+        output_path = "generated_3d_model.png"
+        image.save(output_path)
+        return output_path
