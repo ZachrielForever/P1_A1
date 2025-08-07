@@ -16,25 +16,30 @@ class InterrogatorPane(Container):
     #main_layout {
         height: 1fr;
     }
-    #content_area {
-        height: 1fr;
-    }
-    #file_path_area {
-        height: auto;
-        padding: 1;
-    }
-    #output_box {
-        width: 2fr;
-        height: 1fr;
-    }
-    #settings_box {
+    #main_layout > Vertical {
         width: 1fr;
         height: 1fr;
+        margin-right: 2;
     }
-    #image_select_list {
+    #input_column {
         height: auto;
-        margin-top: 1;
+    }
+    .box_header {
         margin-bottom: 1;
+        text-style: bold;
+    }
+    .setting_label {
+        margin-top: 1;
+    }
+    .file_path_input {
+        margin-bottom: 1;
+    }
+    #image_select {
+        height: 1fr;
+        margin-top: 1;
+    }
+    #text_output {
+        height: 1fr;
     }
     """
     def __init__(self, logic: "InterregatorLogic", **kwargs):
@@ -45,29 +50,28 @@ class InterrogatorPane(Container):
         """Create the layout for the Interrogator pane."""
         self.add_class("interrogator_pane")
 
-        with Vertical(id="main_layout"):
-            with Horizontal(id="file_path_area"):
-                with Vertical(classes="input-group"):
-                    yield Static("Directory Path:", classes="setting_label")
-                    yield Input(placeholder="e.g. /home/user/images", id="directory_path_input", classes="file_path_input")
+        with Horizontal(id="main_layout"):
+            # First Column: Directory & Image Selection
+            with Vertical(id="input_column"):
+                yield Static("[b]Image Input[/b]", classes="box_header")
+                yield Static("Directory Path:", classes="setting_label")
+                yield Input(placeholder="e.g. /home/user/images", id="directory_path_input", classes="file_path_input")
                 yield Button("Load Directory", id="load_directory_button", classes="action_button")
+                yield Static("\n[b]Select Image[/b]", classes="box_header")
+                yield Select([], id="image_select", classes="setting_input")
 
-            with Horizontal(id="content_area"):
-                with Vertical(id="output_box", classes="output-box"):
-                    yield Static("[b]Generated Caption[/b]", classes="box_header")
-                    yield RichLog(id="text_output", wrap=True)
+            # Second Column: Generated Caption Output
+            with Vertical(id="output_panel", classes="output-box"):
+                yield Static("[b]Generated Caption[/b]", classes="box_header")
+                yield RichLog(id="text_output", wrap=True)
 
-                with Vertical(id="settings_box", classes="settings-box"):
-                    yield Static("[b]Select Image[/b]", classes="box_header")
-                    yield Select([], id="image_select_list", classes="setting_input")
-
-                    yield Static("\n[b]Settings[/b]", classes="box_header")
-                    yield Static("Max New Tokens:", classes="setting_label")
-                    yield Input(value="128", id="max_new_tokens_input", classes="setting_input")
-                    yield Static("Beam Size:", classes="setting_label")
-                    yield Input(value="1", id="beam_size_input", classes="setting_input")
-
-            yield Input(placeholder="Prompt (optional, for conditional interrogation)...", id="input_box", classes="prompt-box")
+            # Third Column: Settings
+            with Vertical(id="settings_panel", classes="settings-box"):
+                yield Static("[b]Settings[/b]", classes="box_header")
+                yield Static("Max New Tokens:", classes="setting_label")
+                yield Input(value="128", id="max_new_tokens_input", classes="setting_input")
+                yield Static("Beam Size:", classes="setting_label")
+                yield Input(value="1", id="beam_size_input", classes="setting_input")
 
     @on(Button.Pressed, "#load_directory_button")
     def on_load_directory_button_pressed(self, event: Button.Pressed) -> None:
@@ -87,13 +91,13 @@ class InterrogatorPane(Container):
 
             options = [(file, file) for file in image_files]
 
-            self.query_one("#image_select_list", Select).set_options(options)
+            self.query_one("#image_select", Select).set_options(options)
             self.notify(f"Loaded {len(image_files)} image(s) from {directory_path}", severity="information")
 
         except Exception as e:
             self.notify(f"Failed to read directory: {e}", severity="error")
 
-    @on(Select.Changed, "#image_select_list")
+    @on(Select.Changed, "#image_select")
     def on_image_selected(self, event: Select.Changed) -> None:
         """Placeholder for handling when a file is selected from the list."""
         self.notify(f"Image selected: {event.value}")

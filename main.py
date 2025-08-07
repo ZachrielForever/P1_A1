@@ -11,6 +11,7 @@ from textual.containers import Container, Vertical, Horizontal
 from textual.widgets import Header, Footer, Input, RichLog, Static, RadioSet, RadioButton, Button
 from textual import on
 from textual.worker import Worker, WorkerState
+from textual.binding import Binding
 
 from model_manager import PluginManager
 from plugins.Diffusor.image_diffusor_logic import ImageDiffusorLogic
@@ -74,14 +75,14 @@ def _ensure_dependencies(plugin_manager):
 class AI_Toolkit_App(App):
     CSS_PATH = "style.css"
     BINDINGS = [
-        ("q", "quit", "Quit"),
+        Binding("q", "quit", "Quit"),
     ]
 
     PANE_CLASSES = {}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, plugin_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.plugin_manager = PluginManager()
+        self.plugin_manager = plugin_manager
         self.active_plugin_info = None
         self.active_logic = None
         self.active_pane_id = "llm_pane"
@@ -104,14 +105,16 @@ class AI_Toolkit_App(App):
 
     def _generate_bindings_and_panes(self):
         # Clear existing bindings and panes to prevent duplicates
-        self.BINDINGS = [("q", "quit", "Quit")]
         self.PANE_CLASSES = {}
+        new_bindings = [Binding("q", "quit", "Quit")]
 
         for hotkey, plugin_info in self.plugin_manager.plugins.items():
             pane_name = plugin_info["name"].lower().replace(' ', '_')
             description = plugin_info.get("description", pane_name)
             self.PANE_CLASSES[hotkey] = self.plugin_manager.get_plugin_tui(hotkey)
-            self.bind(hotkey, f"load_pane('{hotkey}')", description=description)
+            new_bindings.append(Binding(f"ctrl+{hotkey}", f"load_pane('{hotkey}')", description))
+
+        self.BINDINGS = new_bindings
 
     def action_load_pane(self, hotkey: str) -> None:
         if self.active_plugin_info and self.active_plugin_info['hotkey'] == hotkey:
@@ -253,6 +256,7 @@ class AI_Toolkit_App(App):
             print(f"Worker failed with error: {event.worker.error}")
 
 if __name__ == "__main__":
-    _ensure_dependencies(PluginManager())
-    app = AI_Toolkit_App()
+    plugin_manager = PluginManager()
+    _ensure_dependencies(plugin_manager)
+    app = AI_Toolkit_App(plugin_manager)
     app.run()
